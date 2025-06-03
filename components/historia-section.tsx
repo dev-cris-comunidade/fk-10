@@ -28,8 +28,7 @@ export default function HistoriaSection() {
           <motion.h2
             variants={fadeIn}
             custom={0}
-            className="font-playfair text-gray-900 dark:text-white mb-4"
-            style={{ fontFamily: "var(--font-playfair)" }}
+            className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4"
           >
             Nossa <span className="highlight-gradient">História</span>
           </motion.h2>
@@ -64,9 +63,7 @@ export default function HistoriaSection() {
           >
             <Card className="h-full gradient-border shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader>
-                <CardTitle className="text-2xl text-primary" style={{ fontFamily: "var(--font-playfair)" }}>
-                  O Início de uma Revolução
-                </CardTitle>
+                <CardTitle className="text-2xl font-bold text-primary">O Início de uma Revolução</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-base text-gray-700 dark:text-gray-300">
@@ -93,9 +90,7 @@ export default function HistoriaSection() {
           >
             <Card className="h-full gradient-border shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader>
-                <CardTitle className="text-2xl text-primary" style={{ fontFamily: "var(--font-playfair)" }}>
-                  Inovação e Autenticidade
-                </CardTitle>
+                <CardTitle className="text-2xl font-bold text-primary">Inovação e Autenticidade</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-base text-gray-700 dark:text-gray-300">

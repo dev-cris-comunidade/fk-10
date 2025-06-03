@@ -60,8 +60,7 @@ export default function PilaresSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
-            className="font-playfair text-gray-900 dark:text-white mb-4"
-            style={{ fontFamily: "var(--font-playfair)" }}
+            className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4"
           >
             Os <span className="highlight-gradient">Pilares</span> da FK
           </motion.h2>
@@ -93,44 +92,52 @@ export default function PilaresSection() {
                     <div className={`p-2 rounded-full ${pilar.bgColor} ${pilar.color}`}>
                       <pilar.icon className="h-6 w-6" />
                     </div>
-                    <CardTitle className="text-xl" style={{ fontFamily: "var(--font-playfair)" }}>
-                      {pilar.title}
-                    </CardTitle>
+                    <CardTitle className="text-xl font-bold">{pilar.title}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 dark:text-gray-300">
-                    {pilar.description.split(" ").map((word, i) => {
-                      // Destacar palavras-chave específicas
-                      const keywords = [
-                        "liberdade",
-                        "autenticidade",
-                        "autonomia",
-                        "consentimento",
-                        "escuta",
-                        "presença",
-                        "cuidado",
-                        "respeito",
-                        "limites",
-                        "identidades",
-                        "escolhas",
-                        "igualdade",
-                        "compromisso",
-                        "diversidade",
-                        "pluralidade",
-                      ]
-
-                      const lowerWord = word.toLowerCase().replace(/[.,;:!?]/g, "")
-
-                      if (keywords.includes(lowerWord)) {
-                        return (
-                          <span key={i} className={`${pilar.color} font-medium`}>
-                            {word}{" "}
-                          </span>
-                        )
-                      }
-                      return word + " "
-                    })}
+                    {pilar.title === "Liberdade" && (
+                      <>
+                        A <span className="highlight-primary">liberdade</span> de escolher como viver e se relacionar,
+                        sem amarras morais, sociais ou normativas. Cada pessoa tem o direito de viver seus afetos com{" "}
+                        <span className="highlight-secondary">autenticidade</span> e{" "}
+                        <span className="highlight-secondary">autonomia</span>.
+                      </>
+                    )}
+                    {pilar.title === "Consenso" && (
+                      <>
+                        Todas as interações partem do <span className="highlight-primary">consentimento mútuo</span> —
+                        com <span className="highlight-secondary">escuta</span>,{" "}
+                        <span className="highlight-secondary">presença</span> e{" "}
+                        <span className="highlight-secondary">cuidado</span>. Nenhum desejo vale mais do que o bem-estar
+                        coletivo.
+                      </>
+                    )}
+                    {pilar.title === "Respeito" && (
+                      <>
+                        Respeitamos os <span className="highlight-primary">limites</span>,{" "}
+                        <span className="highlight-secondary">identidades</span> e{" "}
+                        <span className="highlight-secondary">escolhas</span> de cada pessoa. Nenhum tipo de afeto deve
+                        ser imposto ou desvalorizado — cada vínculo é legítimo em sua forma e intensidade.
+                      </>
+                    )}
+                    {pilar.title === "Igualdade" && (
+                      <>
+                        Praticamos a <span className="highlight-primary">igualdade</span> como{" "}
+                        <span className="highlight-secondary">compromisso ativo</span>, especialmente nos acordos. Não
+                        compactuamos com relações onde só um dos lados tem liberdade e o outro vive sob restrições. A{" "}
+                        <span className="highlight-accent">liberdade precisa ser recíproca</span> — ou não é liberdade.
+                      </>
+                    )}
+                    {pilar.title === "Diversidade" && (
+                      <>
+                        Celebramos a <span className="highlight-primary">pluralidade</span> em todas as suas formas: de
+                        gênero, corpos, afetos, desejos, raças, histórias e vivências. Repudiamos qualquer forma de
+                        preconceito, discriminação ou exclusão. A{" "}
+                        <span className="highlight-accent">FK é para todes</span>.
+                      </>
+                    )}
                   </p>
                 </CardContent>
               </Card>

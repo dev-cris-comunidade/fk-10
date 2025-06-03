@@ -72,18 +72,6 @@
   h6 {
     @apply font-bold tracking-tight;
   }
-
-  h1 {
-    @apply text-5xl md:text-6xl lg:text-7xl xl:text-8xl;
-  }
-
-  h2 {
-    @apply text-4xl md:text-5xl lg:text-6xl;
-  }
-
-  h3 {
-    @apply text-3xl md:text-4xl lg:text-5xl;
-  }
 }
 
 /* Glassmorphism Effects */
@@ -427,4 +415,56 @@
 }
 .animate-delay-500 {
   animation-delay: 500ms;
+}
+
+/* Sistema de Destaques Melhorado */
+.highlight-primary {
+  @apply text-purple-600 dark:text-purple-400 font-semibold;
+}
+
+.highlight-secondary {
+  @apply text-blue-600 dark:text-blue-400 font-medium;
+}
+
+.highlight-accent {
+  @apply text-pink-600 dark:text-pink-400 font-medium;
+}
+
+.highlight-success {
+  @apply text-green-600 dark:text-green-400 font-medium;
+}
+
+.highlight-warning {
+  @apply text-amber-600 dark:text-amber-400 font-medium;
+}
+
+.highlight-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  @apply font-bold;
+}
+
+.highlight-underline {
+  @apply relative font-semibold text-purple-700 dark:text-purple-300;
+}
+
+.highlight-underline::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 1px;
+}
+
+.highlight-box {
+  @apply bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 px-2 py-1 rounded font-medium;
+}
+
+.highlight-large {
+  @apply text-lg font-bold text-purple-700 dark:text-purple-300;
 }
