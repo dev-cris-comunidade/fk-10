@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { CandlestickChartIcon as Candle } from "lucide-react"
+import { CandlestickChartIcon as Candle, AlertCircle } from "lucide-react"
 import { submitMemoria } from "@/lib/supabase"
 
 export default function MemoriaSection() {
@@ -44,13 +44,11 @@ export default function MemoriaSection() {
     try {
       // Check if we're in a development or preview environment without Supabase
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        // Show a success message in development/preview even without Supabase
         toast({
           title: "Modo de demonstração",
           description: "Em um ambiente de produção, sua homenagem seria enviada para revisão.",
         })
 
-        // Reset form
         setFormData({
           honored_name: "",
           submitter_name: "",
@@ -71,23 +69,43 @@ export default function MemoriaSection() {
         description: "Sua homenagem foi enviada com sucesso e será revisada em breve.",
       })
 
-      // Reset form
       setFormData({
         honored_name: "",
         submitter_name: "",
         message: "",
       })
-    } catch (error) {
-      toast({
-        title: "Erro ao enviar",
-        description: "Ocorreu um erro ao enviar sua homenagem. Por favor, tente novamente.",
-        variant: "destructive",
-      })
+    } catch (error: any) {
+      let errorMessage = "Ocorreu um erro ao enviar sua homenagem. Por favor, tente novamente."
+
+      if (error.message.includes("Database tables not found")) {
+        errorMessage = "Database não configurado. Por favor, execute os scripts de configuração primeiro."
+        toast({
+          title: "Modo de demonstração",
+          description: "Database não configurado. Em produção, sua homenagem seria salva no banco de dados.",
+        })
+
+        // Reset form in demo mode
+        setFormData({
+          honored_name: "",
+          submitter_name: "",
+          message: "",
+        })
+      } else {
+        toast({
+          title: "Erro ao enviar",
+          description: errorMessage,
+          variant: "destructive",
+        })
+      }
+
       console.error("Erro ao enviar homenagem:", error)
     } finally {
       setIsSubmitting(false)
     }
   }
+
+  // Check if database is likely not configured
+  const isDemoMode = !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   return (
     <section id="memoria" className="py-20 md:py-32 bg-purple-50 dark:bg-gray-800">
@@ -107,13 +125,19 @@ export default function MemoriaSection() {
           </h2>
           <p className="max-w-3xl mx-auto text-lg text-gray-700 dark:text-gray-300">
             Nesta década, a comunidade FK cresceu, floresceu e nos brindou com inúmeros momentos{" "}
-            <span className="highlight-underline">inesquecíveis</span>. Lamentavelmente, também nos despedimos de alguns
-            membros queridos que deixaram sua marca em nossa história.
+            <span className="highlight-underline">inesquecíveis</span>. Lamentavelmente, também nos despedimos de pessoas muito queridas, porém temos a honra de poder eternizá-las em nossa história.
           </p>
           <p className="max-w-3xl mx-auto text-lg text-gray-700 dark:text-gray-300 mt-4">
             Este espaço é uma <span className="highlight-primary">singela homenagem</span> àqueles que partiram, mas
-            cujo legado de afeto, coragem e autenticidade permanecerá vivo em nossos corações e na essência da FK.
+            as memórias de afeto, intensidade e autenticidade permanecerão vivas em nossos corações e na essência da FK.
           </p>
+
+          {isDemoMode && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full text-yellow-700 dark:text-yellow-200 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              <span>Modo demonstração - usando dados de exemplo</span>
+            </div>
+          )}
         </motion.div>
 
         <div className="max-w-2xl mx-auto">
@@ -127,6 +151,19 @@ export default function MemoriaSection() {
               <h3 className="text-xl font-semibold mb-6 text-center" style={{ fontFamily: "var(--font-playfair)" }}>
                 Homenagear um membro da comunidade
               </h3>
+
+              {isDemoMode && (
+                <div className="mb-6 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                  <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-200 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>
+                      Modo demonstração: O formulário funcionará normalmente quando o banco de dados estiver
+                      configurado.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="honored_name">Nome do(a) Homenageado(a) *</Label>

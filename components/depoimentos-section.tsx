@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
-import { ChevronLeft, ChevronRight, User, Quote } from "lucide-react"
+import { ChevronLeft, ChevronRight, User, Quote, Play, Pause, AlertCircle } from "lucide-react"
 import { submitDepoimento, getApprovedDepoimentos, type Depoimento } from "@/lib/supabase"
 
 // Depoimentos de exemplo para fallback
@@ -43,11 +43,31 @@ const fallbackTestimonials = [
     status: "aprovado" as const,
     created_at: new Date().toISOString(),
   },
+  {
+    id: "4",
+    name: "Roberto Oliveira",
+    since: "2018",
+    text: "A FK me ensinou sobre consenso e comunicação não-violenta. Hoje sou uma pessoa melhor em todos os meus relacionamentos, românticos ou não. Gratidão eterna a essa comunidade incrível.",
+    photo_url: null,
+    status: "aprovado" as const,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "5",
+    name: "Mariana Santos",
+    since: "2019",
+    text: "Depois de anos frequentando a FK, posso dizer que encontrei minha família escolhida. As conexões que fiz aqui são profundas e duradouras. A FK é muito mais que uma festa, é um lar.",
+    photo_url: null,
+    status: "aprovado" as const,
+    created_at: new Date().toISOString(),
+  },
 ]
 
 export default function DepoimentosSection() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [testimonials, setTestimonials] = useState<Depoimento[]>(fallbackTestimonials)
+  const [isAutoPlay, setIsAutoPlay] = useState(true)
+  const [isDatabaseConnected, setIsDatabaseConnected] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     since: "",
@@ -59,29 +79,50 @@ export default function DepoimentosSection() {
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
 
+  // Auto-carousel effect
+  useEffect(() => {
+    if (!isAutoPlay) return
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex === testimonials.length - 1 ? 0 : prevIndex + 1))
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [isAutoPlay, testimonials.length])
+
   // Buscar depoimentos aprovados do Supabase
   useEffect(() => {
     async function fetchTestimonials() {
       try {
-        // Check if we're in a development or preview environment without Supabase
+        // Check if environment variables are available
         if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
           console.log("Using fallback testimonials: Supabase environment variables not available")
-          return // Just use the fallback testimonials
+          setIsDatabaseConnected(false)
+          return
         }
 
         const { data, error } = await getApprovedDepoimentos()
 
         if (error) {
-          console.error("Erro ao buscar depoimentos:", error)
-          return // Continue with fallback testimonials
+          console.log("Database not set up or error occurred:", error.message)
+          setIsDatabaseConnected(false)
+
+          // Show a more user-friendly message for database setup issues
+          if (error.message.includes("relation") && error.message.includes("does not exist")) {
+            console.log("Database tables not found. Using fallback data.")
+          }
+          return
         }
 
         if (data && data.length > 0) {
           setTestimonials(data)
+          setIsDatabaseConnected(true)
+        } else {
+          setIsDatabaseConnected(true) // Database is connected but no data
         }
       } catch (error) {
         console.log("Using fallback testimonials due to error:", error)
-        // Continue with fallback testimonials
+        setIsDatabaseConnected(false)
       } finally {
         setIsLoading(false)
       }
@@ -91,11 +132,17 @@ export default function DepoimentosSection() {
   }, [])
 
   const handlePrev = () => {
+    setIsAutoPlay(false)
     setCurrentIndex((prevIndex) => (prevIndex === 0 ? testimonials.length - 1 : prevIndex - 1))
   }
 
   const handleNext = () => {
+    setIsAutoPlay(false)
     setCurrentIndex((prevIndex) => (prevIndex === testimonials.length - 1 ? 0 : prevIndex + 1))
+  }
+
+  const toggleAutoPlay = () => {
+    setIsAutoPlay(!isAutoPlay)
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -128,15 +175,13 @@ export default function DepoimentosSection() {
     setIsSubmitting(true)
 
     try {
-      // Check if we're in a development or preview environment without Supabase
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        // Show a success message in development/preview even without Supabase
+      // Check if database is connected
+      if (!isDatabaseConnected) {
         toast({
           title: "Modo de demonstração",
-          description: "Em um ambiente de produção, seu depoimento seria enviado para revisão.",
+          description: "Database não configurado. Em produção, seu depoimento seria salvo no banco de dados.",
         })
 
-        // Reset form
         setFormData({
           name: "",
           since: "",
@@ -148,12 +193,11 @@ export default function DepoimentosSection() {
         return
       }
 
-      // Enviar para o Supabase
       await submitDepoimento({
         name: formData.name,
         since: formData.since,
         text: formData.text,
-        photo_url: null, // Implementação de upload de imagem seria feita aqui
+        photo_url: null,
       })
 
       toast({
@@ -161,7 +205,6 @@ export default function DepoimentosSection() {
         description: "Obrigado por compartilhar sua experiência. Seu depoimento será revisado e publicado em breve.",
       })
 
-      // Resetar formulário
       setFormData({
         name: "",
         since: "",
@@ -169,10 +212,16 @@ export default function DepoimentosSection() {
         photo: null,
         consent: false,
       })
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = "Ocorreu um erro ao enviar seu depoimento. Por favor, tente novamente."
+
+      if (error.message.includes("Database tables not found")) {
+        errorMessage = "Database não configurado. Por favor, execute os scripts de configuração primeiro."
+      }
+
       toast({
         title: "Erro ao enviar",
-        description: "Ocorreu um erro ao enviar seu depoimento. Por favor, tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       })
       console.error("Erro ao enviar depoimento:", error)
@@ -182,11 +231,8 @@ export default function DepoimentosSection() {
   }
 
   return (
-    <section
-      id="depoimentos"
-      className="py-20 md:py-32 bg-gradient-to-b from-purple-50 to-white dark:from-gray-800 dark:to-gray-900"
-    >
-      <div className="container px-4 md:px-6">
+    <section id="depoimentos" className="py-20 md:py-32 gradient-cosmic relative overflow-hidden">
+      <div className="container px-4 md:px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -194,47 +240,53 @@ export default function DepoimentosSection() {
           transition={{ duration: 0.8 }}
           className="text-center mb-12 md:mb-16"
         >
-          <h2
-            className="font-playfair text-gray-900 dark:text-white mb-4"
-            style={{ fontFamily: "var(--font-playfair)" }}
-          >
-            Depoimentos da <span className="highlight-gradient">Comunidade</span>
+          <h2 className="text-display font-playfair text-white mb-6">
+            Depoimentos da{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-400">
+              Comunidade
+            </span>
           </h2>
-          <p className="max-w-3xl mx-auto text-lg text-gray-700 dark:text-gray-300">
-            <span className="highlight-large">Histórias e experiências</span> de quem viveu e construiu a FK ao longo
-            desses <span className="highlight-primary">10 anos</span>.
+          <p className="max-w-3xl mx-auto text-body-large text-white/90 leading-relaxed">
+            <span className="font-semibold text-yellow-400">Histórias e experiências</span> de quem viveu e construiu a
+            FK ao longo desses <span className="font-bold text-pink-400">10 anos</span>.
           </p>
+
+          {/* Database Status Indicator */}
+          {!isDatabaseConnected && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full text-yellow-200 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              <span>Modo demonstração - usando dados de exemplo</span>
+            </div>
+          )}
         </motion.div>
 
-        {/* Carrossel de Depoimentos */}
+        {/* Enhanced Carousel */}
         <div className="mb-16">
-          <div className="relative max-w-4xl mx-auto">
+          <div className="relative max-w-5xl mx-auto carousel-container">
             <motion.div
               key={currentIndex}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="px-4"
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
+              className="px-4 carousel-slide"
             >
-              <Card className="gradient-border shadow-lg">
-                <CardContent className="pt-6 pb-6">
+              <Card className="glass border-white/20 shadow-2xl hover-lift card-3d">
+                <CardContent className="pt-8 pb-8">
                   <div className="flex flex-col items-center text-center">
-                    <div className="mb-4 p-3 rounded-full bg-primary/10">
-                      <Quote className="h-8 w-8 text-primary" />
+                    <div className="mb-6 p-4 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 shadow-lg">
+                      <Quote className="h-10 w-10 text-white" />
                     </div>
-                    <p className="text-lg md:text-xl mb-6 text-gray-700 dark:text-gray-300 italic">
+                    <p className="text-xl md:text-2xl mb-8 text-white leading-relaxed italic font-light">
                       "{testimonials[currentIndex].text}"
                     </p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                        <User className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center shadow-lg">
+                        <User className="h-8 w-8 text-white" />
                       </div>
                       <div className="text-left">
-                        <h4 className="font-semibold">{testimonials[currentIndex].name}</h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Membro desde {testimonials[currentIndex].since}
-                        </p>
+                        <h4 className="text-xl font-semibold text-white">{testimonials[currentIndex].name}</h4>
+                        <p className="text-white/70 font-medium">Membro desde {testimonials[currentIndex].since}</p>
                       </div>
                     </div>
                   </div>
@@ -242,44 +294,82 @@ export default function DepoimentosSection() {
               </Card>
             </motion.div>
 
-            {/* Controles do carrossel */}
-            <div className="flex justify-center mt-6 gap-4">
-              <Button variant="outline" size="icon" onClick={handlePrev} className="rounded-full">
-                <ChevronLeft className="h-5 w-5" />
+            {/* Enhanced Controls */}
+            <div className="flex justify-center items-center mt-8 gap-6">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handlePrev}
+                className="rounded-full glass border-white/30 text-white hover:bg-white/20 hover-lift"
+              >
+                <ChevronLeft className="h-6 w-6" />
                 <span className="sr-only">Anterior</span>
               </Button>
-              <div className="flex gap-2">
-                {testimonials.map((_, index) => (
-                  <button
-                    key={index}
-                    className={`w-2 h-2 rounded-full ${
-                      index === currentIndex ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
-                    }`}
-                    onClick={() => setCurrentIndex(index)}
-                  >
-                    <span className="sr-only">Depoimento {index + 1}</span>
-                  </button>
-                ))}
+
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleAutoPlay}
+                  className="rounded-full text-white hover:bg-white/20"
+                >
+                  {isAutoPlay ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                  <span className="sr-only">{isAutoPlay ? "Pausar" : "Reproduzir"}</span>
+                </Button>
+
+                <div className="flex gap-3">
+                  {testimonials.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`carousel-indicator ${index === currentIndex ? "active" : ""}`}
+                      onClick={() => {
+                        setIsAutoPlay(false)
+                        setCurrentIndex(index)
+                      }}
+                    >
+                      <span className="sr-only">Depoimento {index + 1}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <Button variant="outline" size="icon" onClick={handleNext} className="rounded-full">
-                <ChevronRight className="h-5 w-5" />
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleNext}
+                className="rounded-full glass border-white/30 text-white hover:bg-white/20 hover-lift"
+              >
+                <ChevronRight className="h-6 w-6" />
                 <span className="sr-only">Próximo</span>
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Formulário de Submissão */}
+        {/* Enhanced Form */}
         <div className="max-w-2xl mx-auto">
-          <Card className="gradient-border shadow-lg">
-            <CardContent className="pt-6">
-              <h3 className="text-xl font-semibold mb-4 text-center" style={{ fontFamily: "var(--font-playfair)" }}>
-                Compartilhe sua experiência
-              </h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="glass border-white/20 shadow-2xl hover-lift">
+            <CardContent className="pt-8">
+              <h3 className="text-title font-playfair text-center mb-6 text-white">Compartilhe sua experiência</h3>
+
+              {!isDatabaseConnected && (
+                <div className="mb-6 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                  <div className="flex items-center gap-2 text-yellow-200 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>
+                      Modo demonstração: O formulário funcionará normalmente quando o banco de dados estiver
+                      configurado.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome</Label>
+                    <Label htmlFor="name" className="text-white font-medium">
+                      Nome
+                    </Label>
                     <Input
                       id="name"
                       name="name"
@@ -287,10 +377,13 @@ export default function DepoimentosSection() {
                       onChange={handleInputChange}
                       placeholder="Seu nome"
                       required
+                      className="glass border-white/30 text-white placeholder:text-white/60 focus:border-purple-400"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="since">Membro desde</Label>
+                    <Label htmlFor="since" className="text-white font-medium">
+                      Membro desde
+                    </Label>
                     <Input
                       id="since"
                       name="since"
@@ -298,11 +391,14 @@ export default function DepoimentosSection() {
                       onChange={handleInputChange}
                       placeholder="Ex: 2015"
                       required
+                      className="glass border-white/30 text-white placeholder:text-white/60 focus:border-purple-400"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="text">Seu depoimento</Label>
+                  <Label htmlFor="text" className="text-white font-medium">
+                    Seu depoimento
+                  </Label>
                   <Textarea
                     id="text"
                     name="text"
@@ -311,23 +407,47 @@ export default function DepoimentosSection() {
                     placeholder="Conte sua experiência com a FK..."
                     rows={5}
                     required
+                    className="glass border-white/30 text-white placeholder:text-white/60 focus:border-purple-400"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="photo">Foto (opcional)</Label>
-                  <Input id="photo" name="photo" type="file" accept="image/*" onChange={handleFileChange} />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Formatos aceitos: JPG, PNG. Tamanho máximo: 5MB.
-                  </p>
+                  <Label htmlFor="photo" className="text-white font-medium">
+                    Foto (opcional)
+                  </Label>
+                  <Input
+                    id="photo"
+                    name="photo"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="glass border-white/30 text-white file:text-white file:bg-white/20 file:border-0 file:rounded-md"
+                  />
+                  <p className="text-xs text-white/60">Formatos aceitos: JPG, PNG. Tamanho máximo: 5MB.</p>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <Checkbox id="consent" checked={formData.consent} onCheckedChange={handleConsentChange} />
-                  <Label htmlFor="consent" className="text-sm leading-relaxed">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="consent"
+                    checked={formData.consent}
+                    onCheckedChange={handleConsentChange}
+                    className="border-white/30 data-[state=checked]:bg-purple-500"
+                  />
+                  <Label htmlFor="consent" className="text-sm leading-relaxed text-white/90">
                     Eu autorizo a FK a exibir meu nome, foto e depoimento neste website.
                   </Label>
                 </div>
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isSubmitting}>
-                  {isSubmitting ? "Enviando..." : "Enviar Depoimento"}
+                <Button
+                  type="submit"
+                  className="w-full btn-primary-gradient text-white font-semibold py-3 rounded-full hover-lift"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="loading-shimmer w-4 h-4 rounded-full"></div>
+                      Enviando...
+                    </div>
+                  ) : (
+                    "Enviar Depoimento"
+                  )}
                 </Button>
               </form>
             </CardContent>

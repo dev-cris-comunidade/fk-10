@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
-import { Users, Heart } from "lucide-react"
+import { Users, Heart, AlertCircle } from "lucide-react"
 import { submitFamilia } from "@/lib/supabase"
 
 export default function FamiliasSection() {
@@ -56,13 +56,11 @@ export default function FamiliasSection() {
     try {
       // Check if we're in a development or preview environment without Supabase
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        // Show a success message in development/preview even without Supabase
         toast({
           title: "Modo de demonstração",
           description: "Em um ambiente de produção, sua história seria enviada para revisão.",
         })
 
-        // Reset form
         setFormData({
           name: "",
           story: "",
@@ -73,36 +71,56 @@ export default function FamiliasSection() {
         return
       }
 
-      // Enviar para o Supabase
       await submitFamilia({
         name: formData.name,
         story: formData.story,
-        photo_url: null, // Implementação de upload de imagem seria feita aqui
+        photo_url: null,
       })
 
       toast({
         title: "História enviada!",
-        description: "Obrigado por compartilhar sua família FK. Sua história será revisada e publicada em breve.",
+        description: "Obrigada por compartilhar sua família FK. Sua história será revisada e publicada em breve.",
       })
 
-      // Resetar formulário
       setFormData({
         name: "",
         story: "",
         photo: null,
         consent: false,
       })
-    } catch (error) {
-      toast({
-        title: "Erro ao enviar",
-        description: "Ocorreu um erro ao enviar sua história. Por favor, tente novamente.",
-        variant: "destructive",
-      })
+    } catch (error: any) {
+      let errorMessage = "Ocorreu um erro ao enviar sua história. Por favor, tente novamente."
+
+      if (error.message.includes("Database tables not found")) {
+        errorMessage = "Database não configurado. Por favor, execute os scripts de configuração primeiro."
+        toast({
+          title: "Modo de demonstração",
+          description: "Database não configurado. Em produção, sua história seria salva no banco de dados.",
+        })
+
+        // Reset form in demo mode
+        setFormData({
+          name: "",
+          story: "",
+          photo: null,
+          consent: false,
+        })
+      } else {
+        toast({
+          title: "Erro ao enviar",
+          description: errorMessage,
+          variant: "destructive",
+        })
+      }
+
       console.error("Erro ao enviar história:", error)
     } finally {
       setIsSubmitting(false)
     }
   }
+
+  // Check if database is likely not configured
+  const isDemoMode = !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   return (
     <section id="familias" className="py-20 md:py-32 bg-white dark:bg-gray-900">
@@ -124,6 +142,13 @@ export default function FamiliasSection() {
             Muitos encontros, amizades e relacionamentos nasceram na FK. Compartilhe sua história de{" "}
             <span className="highlight-primary">conexão</span> que começou em uma de nossas festas.
           </p>
+
+          {isDemoMode && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full text-yellow-700 dark:text-yellow-200 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              <span>Modo demonstração - usando dados de exemplo</span>
+            </div>
+          )}
         </motion.div>
 
         <div className="max-w-2xl mx-auto">
@@ -137,6 +162,19 @@ export default function FamiliasSection() {
               <h3 className="text-xl font-semibold mb-6 text-center" style={{ fontFamily: "var(--font-playfair)" }}>
                 Conte sua história
               </h3>
+
+              {isDemoMode && (
+                <div className="mb-6 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                  <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-200 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>
+                      Modo demonstração: O formulário funcionará normalmente quando o banco de dados estiver
+                      configurado.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome da Família/Grupo</Label>

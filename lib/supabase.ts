@@ -47,12 +47,33 @@ function getSupabaseClient() {
   return supabaseInstance
 }
 
+// Check if database is properly set up
+async function checkDatabaseSetup() {
+  const supabase = getSupabaseClient()
+  if (!supabase) return false
+
+  try {
+    // Try a simple query to check if tables exist
+    const { error } = await supabase.from("depoimentos").select("count", { count: "exact", head: true })
+    return !error
+  } catch (error) {
+    console.warn("Database tables not found. Please run the setup scripts.")
+    return false
+  }
+}
+
 // Functions to interact with Supabase
 export async function submitDepoimento(depoimento: Omit<Depoimento, "id" | "status" | "created_at">) {
   const supabase = getSupabaseClient()
   if (!supabase) {
     throw new Error("Supabase client not initialized. Check your environment variables.")
   }
+
+  const isSetup = await checkDatabaseSetup()
+  if (!isSetup) {
+    throw new Error("Database tables not found. Please run the setup scripts first.")
+  }
+
   return supabase.from("depoimentos").insert([{ ...depoimento, status: "pendente" }])
 }
 
@@ -61,6 +82,12 @@ export async function submitFamilia(familia: Omit<Familia, "id" | "status" | "cr
   if (!supabase) {
     throw new Error("Supabase client not initialized. Check your environment variables.")
   }
+
+  const isSetup = await checkDatabaseSetup()
+  if (!isSetup) {
+    throw new Error("Database tables not found. Please run the setup scripts first.")
+  }
+
   return supabase.from("familias").insert([{ ...familia, status: "pendente" }])
 }
 
@@ -69,17 +96,31 @@ export async function submitMemoria(memoria: Omit<Memoria, "id" | "status" | "cr
   if (!supabase) {
     throw new Error("Supabase client not initialized. Check your environment variables.")
   }
+
+  const isSetup = await checkDatabaseSetup()
+  if (!isSetup) {
+    throw new Error("Database tables not found. Please run the setup scripts first.")
+  }
+
   return supabase.from("memorias").insert([{ ...memoria, status: "pendente" }])
 }
 
 export async function getApprovedDepoimentos() {
   const supabase = getSupabaseClient()
   if (!supabase) {
-    // Return a mock response that matches the expected structure
     return {
       data: null,
       error: new Error("Supabase client not initialized. Check your environment variables."),
     }
   }
+
+  const isSetup = await checkDatabaseSetup()
+  if (!isSetup) {
+    return {
+      data: null,
+      error: new Error("Database tables not found. Please run the setup scripts first."),
+    }
+  }
+
   return supabase.from("depoimentos").select("*").eq("status", "aprovado").order("created_at", { ascending: false })
 }
