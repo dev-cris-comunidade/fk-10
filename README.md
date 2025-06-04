@@ -10,3 +10,6 @@ Este é o site comemorativo dos 10 anos da FK Parceria Missionária, uma celebra
 - Tailwind CSS - Framework CSS utilitário
 - Supabase - Backend e banco de dados
 - Vercel - Plataforma de deploy
+
+## Deploy Test
+Teste de configuração do deploy automático.
