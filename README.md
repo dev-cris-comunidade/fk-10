@@ -27,8 +27,8 @@ Website comemorativo dos 10 anos da FK, celebrando uma década de construção d
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/v0-fk-10-anos-main.git
-cd v0-fk-10-anos-main
+git clone https://github.com/dev-cris-comunidade/fk-10.git
+cd fk-10
 ```
 
 2. Instale as dependências:
@@ -90,7 +90,7 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ## 👥 Autores
 
-- **Cristiane Almeida** - [GitHubProfile](https://github.com/seu-usuario)
+- **Cristiane Almeida** - [GitHubProfile](https://github.com/dev-cris-comunidade)
 
 ## 🙏 Agradecimentos
 
